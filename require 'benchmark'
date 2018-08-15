@@ -1,0 +1,168 @@
+
+with network calls
+----------------------------------------------------------------------------------------------------
+require 'benchmark'
+require 'open-uri'
+require 'json'
+
+Benchmark.bmbm do |x|
+
+	x.report('Sequential Processing: ') do
+		100.times do |i|
+			response = open('https://jsonplaceholder.typicode.com/todos').read
+			data = JSON.parse(response)
+		end
+	end
+end
+
+
+require 'benchmark'
+require 'open-uri'
+require 'json'
+
+Benchmark.bm do |x|
+	x.report('with parallel processing') do
+		100.times do |i|
+			fork do
+				response = open('https://jsonplaceholder.typicode.com/todos').read
+				data = JSON.parse(response)
+			end
+		end
+		Process.waitall
+	end
+end
+
+without network calls
+----------------------------------------------------------------------------------------------------
+
+require 'benchmark'
+
+class LoadTest
+	ITERATIONS = 10
+
+	def sequential
+		Benchmark.bm do |x|
+			x.report('Sequential Processing: ') do
+				sequential_load_test
+			end
+		end
+	end
+
+	def forking
+		Benchmark.bm do |x|
+			x.report('Forking: ') do
+				forking_load_test
+			end
+		end
+	end
+
+	def threading
+		Benchmark.bm do |x|
+			x.report('Threading: ') do
+				threading_load_test
+			end
+		end
+	end
+
+	private
+
+	def perform
+		1000.times { 1000.times { 2**3**4 } }
+	end
+
+	def sequential_load_test
+		ITERATIONS.times { perform }
+	end
+
+	def forking_load_test
+		ITERATIONS.times do
+			fork do
+				perform
+			end
+		end
+		Process.waitall
+	end
+
+	def threading_load_test
+	threads = []
+	ITERATIONS.times do
+		threads << Thread.new do
+			load_test_task
+		end
+	end
+	threads.map(&:join)
+end
+
+
+end
+
+
+
+def load_test_task
+	1000.times { 1000.times { 2**3**4 } }
+end
+
+def sequential_load_test
+	ITERATIONS.times { load_test_task }
+end
+
+def forking_load_test
+	ITERATIONS.times do
+		fork do
+			load_test_task
+		end
+	end
+	Process.waitall
+end
+
+def threading_load_test
+	threads = []
+	ITERATIONS.times do
+		threads << Thread.new do
+			load_test_task
+		end
+	end
+	threads.map(&:join)
+end
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+
+require 'benchmark'
+require 'open-uri'
+require 'json'
+
+Benchmark.bm do |x|
+	threads = []
+	x.report('with parallel processing') do
+		100.times do |i|
+			threads << Thread.new do
+				response = open('https://jsonplaceholder.typicode.com/todos').read
+				data = JSON.parse(response)
+				sleep 1
+			end
+		end
+		threads.map(&:join)
+	end
+end
+
+require 'benchmark'
+require 'open-uri'
+require 'json'
+
+Benchmark.bm do |x|
+	threads = []
+	x.report('with parallel processing') do
+		500.times do |i|
+			threads << Thread.new do
+				puts (1...1000).map {|x| x * 2}
+			end
+		end
+		threads.map(&:join)
+	end
+end
